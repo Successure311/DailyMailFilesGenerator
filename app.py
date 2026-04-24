@@ -440,10 +440,6 @@ def get_strategies_by_filter(dte_wte, symbol):
 
 # Keep original routes for web interface
 
-@app.route('/api/health')
-def health():
-    return jsonify({'status': 'ok', 'message': 'API is running'})
-
 @app.route('/get_data')
 def get_data():
     return jsonify({
