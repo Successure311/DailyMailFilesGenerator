@@ -480,11 +480,11 @@ def get_strategies_for_date():
         row_snx = df_snx[df_snx['Date'] == date]
         snx_dte = int(row_snx.iloc[0]['DTE']) if not row_snx.empty else 0
         
-        Strategies = get_Strategies_from_tidb()
+        strategies = get_strategies_from_tidb()
         
         filtered = []
         seen = set()
-        for strat in Strategies:
+        for strat in strategies:
             main_strategy = str(strat['Main Strategy']).strip().upper()
             dte_wte = strat['DTE/WTE']
             symbol = strat['Symbol'].upper() if strat['Symbol'] else ''
@@ -514,9 +514,9 @@ def get_strategies_for_date():
                     'index': index_key
                 })
         
-        return jsonify({'Strategies': filtered})
+        return jsonify({'strategies': filtered})
     except Exception as e:
-        return jsonify({'Strategies': [], 'error': str(e)})
+        return jsonify({'strategies': [], 'error': str(e)})
 
 @app.route('/get_strategy_details')
 def get_strategy_details():
@@ -546,10 +546,10 @@ def get_strategy_details():
             if 'Strike ' in df_strategy.columns and 'Strike' not in df_strategy.columns:
                 df_strategy = df_strategy.rename(columns={'Strike ': 'Strike'})
         
-        Strategies = get_Strategies_from_tidb()
+        strategies = get_strategies_from_tidb()
         
-        filtered_Strategies = []
-        for strat in Strategies:
+        filtered_strategies = []
+        for strat in strategies:
             dte_wte = strat['DTE/WTE']
             symbol = strat['Symbol'].upper() if strat['Symbol'] else ''
             
@@ -567,9 +567,9 @@ def get_strategy_details():
             if index_key and match_dte != dte_wte:
                 continue
             
-            filtered_Strategies.append(strat)
+            filtered_strategies.append(strat)
         
-        return jsonify({'status': 'success', 'Strategies': filtered_Strategies})
+        return jsonify({'status': 'success', 'strategies': filtered_strategies})
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})
 
@@ -877,8 +877,8 @@ def get_strategy_file_path():
         return 'AllStrategyDetails.xlsx'
     return None
 
-def get_Strategies_from_tidb(dte_wte=None, symbol=None):
-    Strategies = []
+def get_strategies_from_tidb(dte_wte=None, symbol=None):
+    strategies = []
     try:
         conn = get_tidb_connection()
         cursor = conn.cursor(dictionary=True)
@@ -906,7 +906,7 @@ def get_Strategies_from_tidb(dte_wte=None, symbol=None):
         rows = cursor.fetchall()
         
         for row in rows:
-            Strategies.append({
+            strategies.append({
                 'Main Strategy': row['main_strategy'],
                 'DTE/WTE': row['dte_wte'],
                 'Segment': row['segment'],
@@ -925,15 +925,15 @@ def get_Strategies_from_tidb(dte_wte=None, symbol=None):
         cursor.close()
         conn.close()
     except Exception as e:
-        print(f"Error loading Strategies from TiDB: {e}")
-    return Strategies
+        print(f"Error loading strategies from TiDB: {e}")
+    return strategies
 
 @app.route('/generate_csv', methods=['POST'])
 def generate_csv():
     data = request.json
     lots_data = data.get('lotsData', {})
     date = data.get('date', '')
-    client_MarginData = data.get('clientMarginData', [])
+    client_margin_data = data.get('clientMarginData', [])
     client_strategy_lots = data.get('clientStrategyLots', [])
     strategy_details = data.get('strategyDetails', None)
     
@@ -978,13 +978,13 @@ def generate_csv():
             if 'Strike ' in df_strategy.columns and 'Strike' not in df_strategy.columns:
                 df_strategy = df_strategy.rename(columns={'Strike ': 'Strike'})
         else:
-            # Use Strategies from TiDB
-            tidb_Strategies = get_Strategies_from_tidb()
-            df_strategy = pd.DataFrame(tidb_Strategies)
+            # Use strategies from TiDB
+            tidb_strategies = get_strategies_from_tidb()
+            df_strategy = pd.DataFrame(tidb_strategies)
         
         client_lot_map = {}
-        valid_Strategies = set()
-        valid_excel_Strategies = set()
+        valid_strategies = set()
+        valid_excel_strategies = set()
         excel_to_strategy_map = {}
         for csl in client_strategy_lots:
             cid = str(csl.get('clientId', '')).strip()
@@ -992,9 +992,9 @@ def generate_csv():
             index_name = str(csl.get('indexName', '')).strip().upper()
             excel_strategy = str(csl.get('excelStrategy', '')).strip().upper()
             strategy_upper = strategy.upper()
-            valid_Strategies.add(strategy_upper)
+            valid_strategies.add(strategy_upper)
             if excel_strategy:
-                valid_excel_Strategies.add(excel_strategy.upper())
+                valid_excel_strategies.add(excel_strategy.upper())
                 excel_to_strategy_map[excel_strategy.upper()] = strategy_upper
             if not index_name:
                 index_name = 'NIFTY'
@@ -1009,7 +1009,7 @@ def generate_csv():
         
         created_files = []
         
-        for client in client_MarginData:
+        for client in client_margin_data:
             client_id = str(client.get('ClientID', ''))
             if not client_id:
                 continue
@@ -1038,11 +1038,11 @@ def generate_csv():
                     continue
                 
                 main_strategy_upper = main_strategy.upper()
-                if valid_excel_Strategies:
-                    if main_strategy_upper not in valid_excel_Strategies and main_strategy_upper not in valid_Strategies:
+                if valid_excel_strategies:
+                    if main_strategy_upper not in valid_excel_strategies and main_strategy_upper not in valid_strategies:
                         continue
                 else:
-                    if main_strategy_upper not in valid_Strategies:
+                    if main_strategy_upper not in valid_strategies:
                         continue
                 
                 index_info = index_dte_map.get(index_key, {})
