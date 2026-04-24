@@ -4,7 +4,7 @@ import io
 import json
 import os
 import pandas as pd
-import pymysql
+import mysql.connector
 
 app = Flask(__name__)
 
@@ -12,13 +12,13 @@ TIDB_CONFIG = {
     'host': os.environ.get('TIDB_HOST', 'gateway01.ap-southeast-1.prod.aws.tidbcloud.com'),
     'user': os.environ.get('TIDB_USER', '2hqkC7CYCyd33Y1.root'),
     'password': os.environ.get('TIDB_PASSWORD', 'ED6Hesm31WIPzd8e'),
-    'database': os.environ.get('TIDB_DATABASE', 'test'),
+    'database': os.environ.get('TIDB_DATABASE', 'DailyStrategyForMailFiles'),
     'port': int(os.environ.get('TIDB_PORT', '4000')),
     'charset': 'utf8mb4'
 }
 
 def get_tidb_connection():
-    return pymysql.connect(**TIDB_CONFIG)
+    return mysql.connector.connect(**TIDB_CONFIG)
 
 def init_tidb_tables():
     conn = get_tidb_connection()
@@ -98,7 +98,7 @@ def load_margin_data_from_tidb():
     global INDEX_MARGIN_DATA, STRATEGY_TRADE_COUNT, STRATEGY_EXPECTANCY, CLIENT_MARGIN_DATA
     try:
         conn = get_tidb_connection()
-        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        cursor = conn.cursor(dictionary=True)
         
         cursor.execute("SELECT data_type, json_data FROM margin_data WHERE data_type = 'INDEX_MARGIN' LIMIT 1")
         row = cursor.fetchone()
@@ -156,7 +156,7 @@ def load_strategies_from_tidb(dte_wte, symbol):
     strategies = []
     try:
         conn = get_tidb_connection()
-        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        cursor = conn.cursor(dictionary=True)
         
         query = "SELECT * FROM strategies WHERE 1=1"
         params = []
