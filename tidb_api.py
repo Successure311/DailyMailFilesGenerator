@@ -16,13 +16,13 @@ TIDB_CONFIG = {
 def get_tidb_connection():
     return mysql.connector.connect(**TIDB_CONFIG)
 
-# API: Get all strategies
-@app.route('/api/strategies')
-def get_strategies():
+# API: Get all Strategies
+@app.route('/api/Strategies')
+def get_Strategies():
     try:
         conn = get_tidb_connection()
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM strategies ORDER BY id")
+        cursor.execute("SELECT * FROM Strategies ORDER BY id")
         rows = cursor.fetchall()
         cursor.close()
         conn.close()
@@ -30,14 +30,14 @@ def get_strategies():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})
 
-# API: Get strategies by DTE/WTE and Symbol
-@app.route('/api/strategies/<int:dte_wte>/<symbol>')
-def get_strategies_by_filter(dte_wte, symbol):
+# API: Get Strategies by DTE/WTE and Symbol
+@app.route('/api/Strategies/<int:dte_wte>/<symbol>')
+def get_Strategies_by_filter(dte_wte, symbol):
     try:
         conn = get_tidb_connection()
         cursor = conn.cursor(dictionary=True)
         
-        query = "SELECT * FROM strategies WHERE dte_wte = %s"
+        query = "SELECT * FROM Strategies WHERE dte_wte = %s"
         params = [dte_wte]
         
         if symbol:

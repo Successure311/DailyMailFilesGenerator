@@ -33,7 +33,7 @@ def init_tidb_tables():
     cursor = conn.cursor()
     
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS strategies (
+        CREATE TABLE IF NOT EXISTS Strategies (
             id INT AUTO_INCREMENT PRIMARY KEY,
             main_strategy VARCHAR(100),
             dte_wte INT,
@@ -54,27 +54,13 @@ def init_tidb_tables():
     ''')
     
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS margin_data (
+        CREATE TABLE IF NOT EXISTS MarginData (
             id INT AUTO_INCREMENT PRIMARY KEY,
             data_type VARCHAR(50),
             index_name VARCHAR(50),
             strategy_name VARCHAR(100),
             json_data JSON,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-        )
-    ''')
-    
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS manual_lots (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            date VARCHAR(20),
-            client_id VARCHAR(50),
-            strategy VARCHAR(100),
-            index_name VARCHAR(50),
-            lot_count INT,
-            margin_multiplier INT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            UNIQUE KEY unique_allocation (date, client_id, strategy, index_name)
         )
     ''')
     
@@ -102,28 +88,28 @@ def get_all_dates():
     sorted_dates = sorted(list(dates), key=lambda x: pd.to_datetime(x, format='%d-%m-%Y'))
     return sorted_dates
 
-def load_margin_data_from_tidb():
+def load_MarginData_from_tidb():
     global INDEX_MARGIN_DATA, STRATEGY_TRADE_COUNT, STRATEGY_EXPECTANCY, CLIENT_MARGIN_DATA
     try:
         conn = get_tidb_connection()
         cursor = conn.cursor(dictionary=True)
         
-        cursor.execute("SELECT data_type, json_data FROM margin_data WHERE data_type = 'INDEX_MARGIN' LIMIT 1")
+        cursor.execute("SELECT data_type, json_data FROM MarginData WHERE data_type = 'INDEX_MARGIN' LIMIT 1")
         row = cursor.fetchone()
         if row:
             INDEX_MARGIN_DATA = json.loads(row['json_data'])
         
-        cursor.execute("SELECT data_type, json_data FROM margin_data WHERE data_type = 'STRATEGY_TRADE_COUNT' LIMIT 1")
+        cursor.execute("SELECT data_type, json_data FROM MarginData WHERE data_type = 'STRATEGY_TRADE_COUNT' LIMIT 1")
         row = cursor.fetchone()
         if row:
             STRATEGY_TRADE_COUNT = json.loads(row['json_data'])
         
-        cursor.execute("SELECT data_type, json_data FROM margin_data WHERE data_type = 'STRATEGY_EXPECTANCY' LIMIT 1")
+        cursor.execute("SELECT data_type, json_data FROM MarginData WHERE data_type = 'STRATEGY_EXPECTANCY' LIMIT 1")
         row = cursor.fetchone()
         if row:
             STRATEGY_EXPECTANCY = json.loads(row['json_data'])
         
-        cursor.execute("SELECT data_type, json_data FROM margin_data WHERE data_type = 'CLIENT_MARGIN' LIMIT 1")
+        cursor.execute("SELECT data_type, json_data FROM MarginData WHERE data_type = 'CLIENT_MARGIN' LIMIT 1")
         row = cursor.fetchone()
         if row:
             CLIENT_MARGIN_DATA = json.loads(row['json_data'])
@@ -133,25 +119,25 @@ def load_margin_data_from_tidb():
     except Exception as e:
         print(f"Error loading from TiDB: {e}")
 
-def save_margin_data_to_tidb():
+def save_MarginData_to_tidb():
     try:
         conn = get_tidb_connection()
         cursor = conn.cursor()
         
-        cursor.execute("DELETE FROM margin_data WHERE data_type = 'INDEX_MARGIN'")
-        cursor.execute("INSERT INTO margin_data (data_type, json_data) VALUES ('INDEX_MARGIN', %s)", 
+        cursor.execute("DELETE FROM MarginData WHERE data_type = 'INDEX_MARGIN'")
+        cursor.execute("INSERT INTO MarginData (data_type, json_data) VALUES ('INDEX_MARGIN', %s)", 
                        (json.dumps(INDEX_MARGIN_DATA),))
         
-        cursor.execute("DELETE FROM margin_data WHERE data_type = 'STRATEGY_TRADE_COUNT'")
-        cursor.execute("INSERT INTO margin_data (data_type, json_data) VALUES ('STRATEGY_TRADE_COUNT', %s)", 
+        cursor.execute("DELETE FROM MarginData WHERE data_type = 'STRATEGY_TRADE_COUNT'")
+        cursor.execute("INSERT INTO MarginData (data_type, json_data) VALUES ('STRATEGY_TRADE_COUNT', %s)", 
                        (json.dumps(STRATEGY_TRADE_COUNT),))
         
-        cursor.execute("DELETE FROM margin_data WHERE data_type = 'STRATEGY_EXPECTANCY'")
-        cursor.execute("INSERT INTO margin_data (data_type, json_data) VALUES ('STRATEGY_EXPECTANCY', %s)", 
+        cursor.execute("DELETE FROM MarginData WHERE data_type = 'STRATEGY_EXPECTANCY'")
+        cursor.execute("INSERT INTO MarginData (data_type, json_data) VALUES ('STRATEGY_EXPECTANCY', %s)", 
                        (json.dumps(STRATEGY_EXPECTANCY),))
         
-        cursor.execute("DELETE FROM margin_data WHERE data_type = 'CLIENT_MARGIN'")
-        cursor.execute("INSERT INTO margin_data (data_type, json_data) VALUES ('CLIENT_MARGIN', %s)", 
+        cursor.execute("DELETE FROM MarginData WHERE data_type = 'CLIENT_MARGIN'")
+        cursor.execute("INSERT INTO MarginData (data_type, json_data) VALUES ('CLIENT_MARGIN', %s)", 
                        (json.dumps(CLIENT_MARGIN_DATA),))
         
         conn.commit()
@@ -160,13 +146,13 @@ def save_margin_data_to_tidb():
     except Exception as e:
         print(f"Error saving to TiDB: {e}")
 
-def load_strategies_from_tidb(dte_wte, symbol):
-    strategies = []
+def load_Strategies_from_tidb(dte_wte, symbol):
+    Strategies = []
     try:
         conn = get_tidb_connection()
         cursor = conn.cursor(dictionary=True)
         
-        query = "SELECT * FROM strategies WHERE 1=1"
+        query = "SELECT * FROM Strategies WHERE 1=1"
         params = []
         
         if dte_wte is not None:
@@ -189,7 +175,7 @@ def load_strategies_from_tidb(dte_wte, symbol):
         rows = cursor.fetchall()
         
         for row in rows:
-            strategies.append({
+            Strategies.append({
                 'Main Strategy': row['main_strategy'],
                 'DTE/WTE': row['dte_wte'],
                 'Segment': row['segment'],
@@ -208,8 +194,8 @@ def load_strategies_from_tidb(dte_wte, symbol):
         cursor.close()
         conn.close()
     except Exception as e:
-        print(f"Error loading strategies from TiDB: {e}")
-    return strategies
+        print(f"Error loading Strategies from TiDB: {e}")
+    return Strategies
 
 def save_strategy_to_tidb(strategy_data):
     try:
@@ -217,7 +203,7 @@ def save_strategy_to_tidb(strategy_data):
         cursor = conn.cursor()
         
         cursor.execute('''
-            INSERT INTO strategies (main_strategy, dte_wte, segment, strategy, exchange, symbol, 
+            INSERT INTO Strategies (main_strategy, dte_wte, segment, strategy, exchange, symbol, 
             entry_time, exit_time, strike, option_type, side, sl_percent, remarks)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         ''', (
@@ -243,7 +229,7 @@ def save_strategy_to_tidb(strategy_data):
         print(f"Error saving strategy to TiDB: {e}")
 
 try:
-    load_margin_data_from_tidb()
+    load_MarginData_from_tidb()
 except Exception as e:
     print(f"TiDB load error (using local fallback): {e}")
 
@@ -275,13 +261,13 @@ def get_all_data():
         cursor = conn.cursor(dictionary=True)
         
         # Get all margin data
-        cursor.execute("SELECT * FROM margin_data")
+        cursor.execute("SELECT * FROM MarginData")
         margin_rows = cursor.fetchall()
         
         # Convert JSON strings to objects
-        margin_data = {}
+        MarginData = {}
         for row in margin_rows:
-            margin_data[row['data_type']] = json.loads(row['json_data'])
+            MarginData[row['data_type']] = json.loads(row['json_data'])
         
         cursor.close()
         conn.close()
@@ -289,10 +275,10 @@ def get_all_data():
         return jsonify({
             'status': 'success',
             'data': {
-                'INDEX_MARGIN_DATA': margin_data.get('INDEX_MARGIN', {}),
-                'STRATEGY_TRADE_COUNT': margin_data.get('STRATEGY_TRADE_COUNT', {}),
-                'STRATEGY_EXPECTANCY': margin_data.get('STRATEGY_EXPECTANCY', {}),
-                'CLIENT_MARGIN_DATA': margin_data.get('CLIENT_MARGIN', [])
+                'INDEX_MARGIN_DATA': MarginData.get('INDEX_MARGIN', {}),
+                'STRATEGY_TRADE_COUNT': MarginData.get('STRATEGY_TRADE_COUNT', {}),
+                'STRATEGY_EXPECTANCY': MarginData.get('STRATEGY_EXPECTANCY', {}),
+                'CLIENT_MARGIN_DATA': MarginData.get('CLIENT_MARGIN', [])
             }
         })
     except Exception as e:
@@ -303,7 +289,7 @@ def get_index_margin():
     try:
         conn = get_tidb_connection()
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT json_data FROM margin_data WHERE data_type = 'INDEX_MARGIN'")
+        cursor.execute("SELECT json_data FROM MarginData WHERE data_type = 'INDEX_MARGIN'")
         row = cursor.fetchone()
         cursor.close()
         conn.close()
@@ -321,7 +307,7 @@ def get_strategy_trade_count():
     try:
         conn = get_tidb_connection()
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT json_data FROM margin_data WHERE data_type = 'STRATEGY_TRADE_COUNT'")
+        cursor.execute("SELECT json_data FROM MarginData WHERE data_type = 'STRATEGY_TRADE_COUNT'")
         row = cursor.fetchone()
         cursor.close()
         conn.close()
@@ -339,7 +325,7 @@ def get_strategy_expectancy():
     try:
         conn = get_tidb_connection()
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT json_data FROM margin_data WHERE data_type = 'STRATEGY_EXPECTANCY'")
+        cursor.execute("SELECT json_data FROM MarginData WHERE data_type = 'STRATEGY_EXPECTANCY'")
         row = cursor.fetchone()
         cursor.close()
         conn.close()
@@ -357,7 +343,7 @@ def get_client_margin():
     try:
         conn = get_tidb_connection()
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT json_data FROM margin_data WHERE data_type = 'CLIENT_MARGIN'")
+        cursor.execute("SELECT json_data FROM MarginData WHERE data_type = 'CLIENT_MARGIN'")
         row = cursor.fetchone()
         cursor.close()
         conn.close()
@@ -396,12 +382,12 @@ def get_manual_lots_by_date(date):
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})
 
-@app.route('/api/strategies')
-def get_strategies():
+@app.route('/api/Strategies')
+def get_Strategies():
     try:
         conn = get_tidb_connection()
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM strategies ORDER BY id")
+        cursor.execute("SELECT * FROM Strategies ORDER BY id")
         rows = cursor.fetchall()
         cursor.close()
         conn.close()
@@ -409,13 +395,13 @@ def get_strategies():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})
 
-@app.route('/api/strategies/<int:dte_wte>/<symbol>')
-def get_strategies_by_filter(dte_wte, symbol):
+@app.route('/api/Strategies/<int:dte_wte>/<symbol>')
+def get_Strategies_by_filter(dte_wte, symbol):
     try:
         conn = get_tidb_connection()
         cursor = conn.cursor(dictionary=True)
         
-        query = "SELECT * FROM strategies WHERE dte_wte = %s"
+        query = "SELECT * FROM Strategies WHERE dte_wte = %s"
         params = [dte_wte]
         
         if symbol:
@@ -477,8 +463,8 @@ def load_manual_lots():
         pass
     return {}
 
-@app.route('/get_strategies_for_date')
-def get_strategies_for_date():
+@app.route('/get_Strategies_for_date')
+def get_Strategies_for_date():
     date = request.args.get('date', '')
     
     try:
@@ -494,11 +480,11 @@ def get_strategies_for_date():
         row_snx = df_snx[df_snx['Date'] == date]
         snx_dte = int(row_snx.iloc[0]['DTE']) if not row_snx.empty else 0
         
-        strategies = get_strategies_from_tidb()
+        Strategies = get_Strategies_from_tidb()
         
         filtered = []
         seen = set()
-        for strat in strategies:
+        for strat in Strategies:
             main_strategy = str(strat['Main Strategy']).strip().upper()
             dte_wte = strat['DTE/WTE']
             symbol = strat['Symbol'].upper() if strat['Symbol'] else ''
@@ -528,9 +514,9 @@ def get_strategies_for_date():
                     'index': index_key
                 })
         
-        return jsonify({'strategies': filtered})
+        return jsonify({'Strategies': filtered})
     except Exception as e:
-        return jsonify({'strategies': [], 'error': str(e)})
+        return jsonify({'Strategies': [], 'error': str(e)})
 
 @app.route('/get_strategy_details')
 def get_strategy_details():
@@ -560,10 +546,10 @@ def get_strategy_details():
             if 'Strike ' in df_strategy.columns and 'Strike' not in df_strategy.columns:
                 df_strategy = df_strategy.rename(columns={'Strike ': 'Strike'})
         
-        strategies = get_strategies_from_tidb()
+        Strategies = get_Strategies_from_tidb()
         
-        filtered_strategies = []
-        for strat in strategies:
+        filtered_Strategies = []
+        for strat in Strategies:
             dte_wte = strat['DTE/WTE']
             symbol = strat['Symbol'].upper() if strat['Symbol'] else ''
             
@@ -581,9 +567,9 @@ def get_strategy_details():
             if index_key and match_dte != dte_wte:
                 continue
             
-            filtered_strategies.append(strat)
+            filtered_Strategies.append(strat)
         
-        return jsonify({'status': 'success', 'strategies': filtered_strategies})
+        return jsonify({'status': 'success', 'Strategies': filtered_Strategies})
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})
 
@@ -591,7 +577,7 @@ def get_strategy_details():
 def save_strategy_details():
     data = request.json
     date = data.get('date', '')
-    strategies = data.get('strategies', [])
+    Strategies = data.get('Strategies', [])
     
     strategy_file = get_strategy_file_path()
     
@@ -640,16 +626,16 @@ def save_strategy_details():
                 rows_to_remove.append(idx)
         
         df_strategy_filtered = df_strategy.drop(rows_to_remove)
-        new_rows = pd.DataFrame(strategies)
+        new_rows = pd.DataFrame(Strategies)
         df_final = pd.concat([df_strategy_filtered, new_rows], ignore_index=True)
         
         if strategy_file:
             df_final.to_excel(strategy_file, index=False, startrow=1)
         
-        # Also save new strategies to TiDB
+        # Also save new Strategies to TiDB
         conn = get_tidb_connection()
         cursor = conn.cursor()
-        for strat in strategies:
+        for strat in Strategies:
             sl_val = strat.get('SL%', '0')
             sl_str = str(sl_val).strip().replace('%', '')
             if '_' in sl_str:
@@ -661,7 +647,7 @@ def save_strategy_details():
                     sl_final = '0'
             
             cursor.execute('''
-                INSERT INTO strategies (main_strategy, dte_wte, segment, strategy, exchange, symbol, 
+                INSERT INTO Strategies (main_strategy, dte_wte, segment, strategy, exchange, symbol, 
                 entry_time, exit_time, strike, option_type, side, sl_percent, remarks)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ''', (
@@ -739,7 +725,7 @@ def save_data():
         f.write('STRATEGY_EXPECTANCY = ' + json.dumps(STRATEGY_EXPECTANCY, indent=4))
     
     try:
-        save_margin_data_to_tidb()
+        save_MarginData_to_tidb()
     except Exception as e:
         print(f"Error syncing to TiDB: {e}")
     
@@ -748,14 +734,14 @@ def save_data():
 @app.route('/calculate_expectancy', methods=['POST'])
 def calculate_expectancy():
     data = request.json
-    margin_data = data.get('margin_data', {})
+    MarginData = data.get('MarginData', {})
     trade_count = data.get('trade_count', {})
     
     expectancy = {}
     
-    for index, strategies in trade_count.items():
+    for index, Strategies in trade_count.items():
         expectancy[index] = {}
-        for strategy, count in strategies.items():
+        for strategy, count in Strategies.items():
             if count == '' or count is None or count == '-':
                 continue
             
@@ -763,7 +749,7 @@ def calculate_expectancy():
             if count == 0:
                 continue
             
-            margin = margin_data.get(index, {})
+            margin = MarginData.get(index, {})
             expiry_m = margin.get('Expiry', {})
             nonexpiry_m = margin.get('Non_Expiry', {})
             
@@ -822,9 +808,9 @@ def upload_strategy_file():
             file.save('AllStrategyDetails.xlsx')
             
             try:
-                sync_strategies_to_tidb()
+                sync_Strategies_to_tidb()
             except Exception as e:
-                print(f"Error syncing strategies to TiDB: {e}")
+                print(f"Error syncing Strategies to TiDB: {e}")
             
             return jsonify({'status': 'success', 'message': 'File uploaded successfully'})
         else:
@@ -832,7 +818,7 @@ def upload_strategy_file():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})
 
-def sync_strategies_to_tidb():
+def sync_Strategies_to_tidb():
     strategy_file = get_strategy_file_path()
     if not strategy_file:
         return
@@ -841,7 +827,7 @@ def sync_strategies_to_tidb():
         conn = get_tidb_connection()
         cursor = conn.cursor()
         
-        cursor.execute("DELETE FROM strategies")
+        cursor.execute("DELETE FROM Strategies")
         
         df_strategy = pd.read_excel(strategy_file, skiprows=1)
         df_strategy = df_strategy.iloc[:, 2:].dropna(how='all')
@@ -861,7 +847,7 @@ def sync_strategies_to_tidb():
                     sl_final = '0'
             
             cursor.execute('''
-                INSERT INTO strategies (main_strategy, dte_wte, segment, strategy, exchange, symbol, 
+                INSERT INTO Strategies (main_strategy, dte_wte, segment, strategy, exchange, symbol, 
                 entry_time, exit_time, strike, option_type, side, sl_percent, remarks)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ''', (
@@ -884,20 +870,20 @@ def sync_strategies_to_tidb():
         cursor.close()
         conn.close()
     except Exception as e:
-        print(f"Error in sync_strategies_to_tidb: {e}")
+        print(f"Error in sync_Strategies_to_tidb: {e}")
 
 def get_strategy_file_path():
     if os.path.exists('AllStrategyDetails.xlsx'):
         return 'AllStrategyDetails.xlsx'
     return None
 
-def get_strategies_from_tidb(dte_wte=None, symbol=None):
-    strategies = []
+def get_Strategies_from_tidb(dte_wte=None, symbol=None):
+    Strategies = []
     try:
         conn = get_tidb_connection()
         cursor = conn.cursor(dictionary=True)
         
-        query = "SELECT * FROM strategies WHERE 1=1"
+        query = "SELECT * FROM Strategies WHERE 1=1"
         params = []
         
         if dte_wte is not None:
@@ -920,7 +906,7 @@ def get_strategies_from_tidb(dte_wte=None, symbol=None):
         rows = cursor.fetchall()
         
         for row in rows:
-            strategies.append({
+            Strategies.append({
                 'Main Strategy': row['main_strategy'],
                 'DTE/WTE': row['dte_wte'],
                 'Segment': row['segment'],
@@ -939,15 +925,15 @@ def get_strategies_from_tidb(dte_wte=None, symbol=None):
         cursor.close()
         conn.close()
     except Exception as e:
-        print(f"Error loading strategies from TiDB: {e}")
-    return strategies
+        print(f"Error loading Strategies from TiDB: {e}")
+    return Strategies
 
 @app.route('/generate_csv', methods=['POST'])
 def generate_csv():
     data = request.json
     lots_data = data.get('lotsData', {})
     date = data.get('date', '')
-    client_margin_data = data.get('clientMarginData', [])
+    client_MarginData = data.get('clientMarginData', [])
     client_strategy_lots = data.get('clientStrategyLots', [])
     strategy_details = data.get('strategyDetails', None)
     
@@ -992,13 +978,13 @@ def generate_csv():
             if 'Strike ' in df_strategy.columns and 'Strike' not in df_strategy.columns:
                 df_strategy = df_strategy.rename(columns={'Strike ': 'Strike'})
         else:
-            # Use strategies from TiDB
-            tidb_strategies = get_strategies_from_tidb()
-            df_strategy = pd.DataFrame(tidb_strategies)
+            # Use Strategies from TiDB
+            tidb_Strategies = get_Strategies_from_tidb()
+            df_strategy = pd.DataFrame(tidb_Strategies)
         
         client_lot_map = {}
-        valid_strategies = set()
-        valid_excel_strategies = set()
+        valid_Strategies = set()
+        valid_excel_Strategies = set()
         excel_to_strategy_map = {}
         for csl in client_strategy_lots:
             cid = str(csl.get('clientId', '')).strip()
@@ -1006,9 +992,9 @@ def generate_csv():
             index_name = str(csl.get('indexName', '')).strip().upper()
             excel_strategy = str(csl.get('excelStrategy', '')).strip().upper()
             strategy_upper = strategy.upper()
-            valid_strategies.add(strategy_upper)
+            valid_Strategies.add(strategy_upper)
             if excel_strategy:
-                valid_excel_strategies.add(excel_strategy.upper())
+                valid_excel_Strategies.add(excel_strategy.upper())
                 excel_to_strategy_map[excel_strategy.upper()] = strategy_upper
             if not index_name:
                 index_name = 'NIFTY'
@@ -1023,7 +1009,7 @@ def generate_csv():
         
         created_files = []
         
-        for client in client_margin_data:
+        for client in client_MarginData:
             client_id = str(client.get('ClientID', ''))
             if not client_id:
                 continue
@@ -1052,11 +1038,11 @@ def generate_csv():
                     continue
                 
                 main_strategy_upper = main_strategy.upper()
-                if valid_excel_strategies:
-                    if main_strategy_upper not in valid_excel_strategies and main_strategy_upper not in valid_strategies:
+                if valid_excel_Strategies:
+                    if main_strategy_upper not in valid_excel_Strategies and main_strategy_upper not in valid_Strategies:
                         continue
                 else:
-                    if main_strategy_upper not in valid_strategies:
+                    if main_strategy_upper not in valid_Strategies:
                         continue
                 
                 index_info = index_dte_map.get(index_key, {})
