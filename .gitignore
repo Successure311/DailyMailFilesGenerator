@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.env
+*.xlsx
+MailFiles/
+manual_lots.json
+.vscode/
+*.py.bak
+*.egg-info/
+dist/
+build/

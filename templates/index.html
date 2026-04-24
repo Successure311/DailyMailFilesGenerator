@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClientWise Daily Trade Files</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="main-container">
+        <h2 class="text-center mb-3">ClientWise Daily Trade Files</h2>
+        
+        <ul class="nav nav-tabs mb-3" id="pageTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="lot-tab" data-bs-toggle="tab" data-bs-target="#lot-page" type="button">Lot Allocation</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="strategy-tab" data-bs-toggle="tab" data-bs-target="#strategy-page" type="button">Update Strategy</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="margin-tab" data-bs-toggle="tab" data-bs-target="#margin-page" type="button">Margin Data</button>
+            </li>
+        </ul>
+        
+        <div class="tab-content">
+            <div class="tab-pane fade" id="strategy-page" role="tabpanel">
+                <div class="card">
+                    <div class="card-header bg-success text-white py-2">
+                        <h6 class="mb-0">Upload Strategy File</h6>
+                    </div>
+                    <div class="card-body p-3">
+                        <div class="mb-3">
+                            <label class="form-label"><strong>Select Excel File (.xlsx or .xls):</strong></label>
+                            <div class="input-group">
+                                <input type="text" id="fileNameDisplay" class="form-control" value="Please select file" readonly onclick="document.getElementById('strategyFileInput').click();">
+                                <label class="input-group-text" for="strategyFileInput" style="cursor:pointer;background:#e9ecef;">Browse</label>
+                                <input type="file" id="strategyFileInput" class="form-control" accept=".xlsx,.xls" style="display:none;" onchange="updateFileName()">
+                            </div>
+                        </div>
+                        <div id="dropZone" class="border border-2 border-dashed rounded p-4 text-center" style="border-color: #6c757d; cursor: pointer;">
+                            <p class="mb-1"><strong>Drag & Drop file here</strong></p>
+                            <p class="mb-0 text-muted" style="font-size: 12px;">or click to browse</p>
+                        </div>
+                        <button class="btn btn-primary mt-3" onclick="uploadStrategyFile()">Upload</button>
+                        <div id="uploadStatus" class="mt-2"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tab-pane fade show active" id="lot-page" role="tabpanel">
+                <div class="mb-3">
+                    <label class="me-2"><strong>Select Date:</strong></label>
+                    <select id="dateSelect" class="form-select" style="width: auto; display: inline-block;">
+                    </select>
+                </div>
+                <div class="card">
+                    <div class="card-header bg-success text-white py-2">
+                        <h6 class="mb-0">Dates Details</h6>
+                    </div>
+                    <div class="card-body p-2">
+                        <table class="table table-bordered table-sm mb-0" id="lotTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>EntryDay</th>
+                                    <th>NF Expiry</th>
+                                    <th>NF DTE</th>
+                                    <th>BNF Expiry</th>
+                                    <th>BNF WTE</th>
+                                    <th>SNX Expiry</th>
+                                    <th>SNX DTE</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card mt-3" id="allocationCard" style="display: none;">
+                    <div class="card-header bg-success text-white py-2 d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">Client Wise Strategy Allocation</h6>
+                        <div class="d-flex align-items-center">
+                            <label class="mb-0 me-2" style="font-size:13px;">Margin Multiplier (%):</label>
+                            <input type="number" id="marginMultiplier" class="form-control form-control-sm" style="width:80px;" value="15" min="0" max="50">
+                            <button class="btn btn-info btn-sm ms-2" onclick="toggleMarginUsed()">Show Margin %</button>
+                            <button class="btn btn-light btn-sm ms-2" onclick="refreshLots()">Refresh</button>
+                            <!-- <button class="btn btn-warning btn-sm ms-2" onclick="saveManualLots()">Save Changes</button> -->
+                            <button class="btn btn-primary btn-sm ms-2" onclick="generateCSV()">Save CSV</button>
+                        </div>
+                    </div>
+<div class="card-body p-2">
+                        <table class="table table-bordered table-sm mb-0" id="allocationTable">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="card mt-3" id="strategyDetailsCard" style="display: none;">
+                    <div class="card-header bg-success text-white py-2 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <h6 class="mb-0">Strategy Details for Selected Date</h6>
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <button class="btn btn-sm btn-primary" onclick="addStrategyRow()">+ Add Row</button>
+                            <!-- <button class="btn btn-sm btn-danger" onclick="deleteStrategyRow()">- Delete Row</button>
+                            <button class="btn btn-sm btn-warning text-dark" onclick="saveTemporaryStrategyChanges()">Save Temporary</button>
+                            <button class="btn btn-sm btn-success" onclick="savePermanentStrategyChanges()">Save Permanent</button> -->
+                        </div>
+                    </div>
+                    <div class="card-body p-2">
+                        <table class="table table-bordered table-sm mb-0" id="strategyDetailsTable">
+                            <thead>
+                                  <tr>
+                                      <th style="width:40px;"></th>
+                                      <th>Main Strategy</th>
+                                     <th>DTE/WTE</th>
+                                     <th>Segment</th>
+                                     <th>Strategy</th>
+                                     <th>Exchange</th>
+                                     <th>Symbol</th>
+                                     <th>Entry Time</th>
+                                     <th>Exit Time</th>
+                                     <th>Strike</th>
+                                     <th>Option Type</th>
+                                     <th>Side</th>
+<th>SL%</th>
+                                      <th>Remarks</th>
+                                      <th style="width:40px;"></th>
+                                 </tr>
+                             </thead>
+                             <tbody></tbody>
+                         </table>
+                     </div>
+                 </div>
+            </div>
+            
+            <div class="tab-pane fade" id="margin-page" role="tabpanel">
+                <div class="d-flex justify-content-end mb-2">
+                    <button class="btn btn-primary" onclick="saveData()">Save Changes</button>
+                </div>
+                
+                <div class="top-row">
+                    <div class="table-box">
+                        <div class="card">
+                            <div class="card-header bg-success text-white py-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">Index Margin Data</h6>
+                                    <button class="btn btn-sm btn-light py-0" onclick="addMarginRow()">+ Add</button>
+                                </div>
+                            </div>
+                            <div class="card-body p-2">
+                                <table class="table table-bordered table-sm mb-0" id="marginTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Index</th>
+                                            <th>Day Type</th>
+                                            <th>W.H</th>
+                                            <th>W.O.H</th>
+                                            <th style="width:40px;"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="table-box">
+                        <div class="card">
+                            <div class="card-header bg-success text-white py-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">Strategy Trade Count</h6>
+                                    <button class="btn btn-sm btn-light py-0" onclick="addTradeCountRow()">+ Add</button>
+                                </div>
+                            </div>
+                            <div class="card-body p-2">
+                                <table class="table table-bordered table-sm mb-0" id="tradeCountTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Strategy</th>
+                                            <th>SENSEX</th>
+                                            <th>BANKNIFTY</th>
+                                            <th>NIFTY</th>
+                                            <th style="width:40px;"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="table-box">
+                        <div class="card">
+                            <div class="card-header bg-success text-white py-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">Client Margin Data</h6>
+                                    <button class="btn btn-sm btn-light py-0" onclick="addClientRow()">+ Add</button>
+                                </div>
+                            </div>
+                            <div class="card-body p-2">
+                                <table class="table table-bordered table-sm mb-0" id="clientMarginTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Code</th>
+                                            <th>ClientID</th>
+                                            <th>Total Margin</th>
+                                            <th style="width:40px;"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="table-box bottom-table">
+                    <div class="card">
+                        <div class="card-header bg-success text-white py-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">Strategy Expectancy</h6>
+                                <button class="btn btn-sm btn-light py-0" onclick="addExpectancyRow()">+ Add</button>
+                            </div>
+                        </div>
+                        <div class="card-body p-2">
+                            <table class="table table-bordered table-sm mb-0" id="expectancyTable">
+                                <thead>
+                                    <tr>
+                                        <th>Index</th>
+                                        <th>Strategy</th>
+                                        <th>N.Expiry W.O.H</th>
+                                        <th>N.Expiry W.H</th>
+                                        <th>Expiry W.O.H</th>
+                                        <th>Expiry W.H</th>
+                                        <th style="width:30px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/app.js"></script>
+</body>
+</html>
