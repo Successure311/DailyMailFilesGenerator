@@ -529,20 +529,6 @@ def get_strategies_for_date():
                 })
         
         return jsonify({'strategies': filtered})
-            elif 'SENSEX' in symbol:
-                index_key = 'SENSEX'
-                match_dte = snx_dte
-            
-            if index_key and match_dte != dte_wte:
-                continue
-            
-            if not any(s['strategy'] == main_strategy and s['index'] == index_key for s in strategies):
-                strategies.append({
-                    'strategy': main_strategy,
-                    'index': index_key
-                })
-        
-        return jsonify({'strategies': strategies})
     except Exception as e:
         return jsonify({'strategies': [], 'error': str(e)})
 
