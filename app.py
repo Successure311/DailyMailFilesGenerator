@@ -480,21 +480,8 @@ def load_manual_lots():
 @app.route('/get_strategies_for_date')
 def get_strategies_for_date():
     date = request.args.get('date', '')
-    strategy_file = get_strategy_file_path()
-    
-    if not strategy_file:
-        return jsonify({'strategies': []})
     
     try:
-        df_strategy = pd.read_excel(strategy_file, skiprows=1)
-        df_strategy = df_strategy.iloc[:, 2:].dropna(how='all')
-        df_strategy.columns = ['Main Strategy', 'DTE/WTE', 'Segment', 'Strategy', 'Exchange', 'Symbol', 
-                          'Entry Time', 'Exit Time', 'Strike', 'Option Type', 'Side', 'SL%', 'Remarks']
-        df_strategy = df_strategy[df_strategy['Strategy'].notna()]
-        
-        if 'Strike ' in df_strategy.columns and 'Strike' not in df_strategy.columns:
-            df_strategy = df_strategy.rename(columns={'Strike ': 'Strike'})
-        
         df_nf = pd.read_csv('NF_ExpiryDate.csv')
         row_nf = df_nf[df_nf['Date'] == date]
         nf_dte = int(row_nf.iloc[0]['DTE']) if not row_nf.empty else 0
@@ -507,11 +494,14 @@ def get_strategies_for_date():
         row_snx = df_snx[df_snx['Date'] == date]
         snx_dte = int(row_snx.iloc[0]['DTE']) if not row_snx.empty else 0
         
-        strategies = []
-        for idx, row in df_strategy.iterrows():
-            main_strategy = str(row['Main Strategy']).strip().upper() if pd.notna(row['Main Strategy']) else ''
-            dte_wte = int(row['DTE/WTE']) if pd.notna(row['DTE/WTE']) else 0
-            symbol = str(row['Symbol']).strip().upper() if pd.notna(row['Symbol']) else ''
+        strategies = get_strategies_from_tidb()
+        
+        filtered = []
+        seen = set()
+        for strat in strategies:
+            main_strategy = str(strat['Main Strategy']).strip().upper()
+            dte_wte = strat['DTE/WTE']
+            symbol = strat['Symbol'].upper() if strat['Symbol'] else ''
             
             if not main_strategy:
                 continue
@@ -523,6 +513,22 @@ def get_strategies_for_date():
             elif 'NIFTY' in symbol:
                 index_key = 'NIFTY'
                 match_dte = nf_dte
+            elif 'SENSEX' in symbol:
+                index_key = 'SENSEX'
+                match_dte = snx_dte
+            
+            if index_key and match_dte != dte_wte:
+                continue
+            
+            key = (main_strategy, index_key)
+            if key not in seen:
+                seen.add(key)
+                filtered.append({
+                    'strategy': main_strategy,
+                    'index': index_key
+                })
+        
+        return jsonify({'strategies': filtered})
             elif 'SENSEX' in symbol:
                 index_key = 'SENSEX'
                 match_dte = snx_dte
@@ -567,13 +573,13 @@ def get_strategy_details():
             
             if 'Strike ' in df_strategy.columns and 'Strike' not in df_strategy.columns:
                 df_strategy = df_strategy.rename(columns={'Strike ': 'Strike'})
-        else:
-            return jsonify({'status': 'error', 'message': 'No strategy file found'})
         
-        strategies = []
-        for idx, row in df_strategy.iterrows():
-            dte_wte = int(row['DTE/WTE']) if pd.notna(row['DTE/WTE']) else 0
-            symbol = str(row['Symbol']).strip().upper() if pd.notna(row['Symbol']) else ''
+        strategies = get_strategies_from_tidb()
+        
+        filtered_strategies = []
+        for strat in strategies:
+            dte_wte = strat['DTE/WTE']
+            symbol = strat['Symbol'].upper() if strat['Symbol'] else ''
             
             index_key = None
             if 'BANKNIFTY' in symbol or 'BANK' in symbol:
@@ -589,34 +595,9 @@ def get_strategy_details():
             if index_key and match_dte != dte_wte:
                 continue
             
-            strategies.append({
-                'Main Strategy': str(row['Main Strategy']) if pd.notna(row['Main Strategy']) else '',
-                'DTE/WTE': dte_wte,
-                'Segment': str(row['Segment']) if pd.notna(row['Segment']) else '',
-                'Strategy': str(row['Strategy']) if pd.notna(row['Strategy']) else '',
-                'Exchange': str(row['Exchange']) if pd.notna(row['Exchange']) else '',
-                'Symbol': str(row['Symbol']) if pd.notna(row['Symbol']) else '',
-                'Entry Time': str(row['Entry Time']) if pd.notna(row['Entry Time']) else '',
-                'Exit Time': str(row['Exit Time']) if pd.notna(row['Exit Time']) else '',
-                'Strike': str(row['Strike']) if pd.notna(row['Strike']) else 'ATM',
-                'Option Type': str(row['Option Type']) if pd.notna(row['Option Type']) else 'CE& PE Both',
-                'Side': str(row['Side']) if pd.notna(row['Side']) else 'Sell',
-                'SL%': '0',
-                'Remarks': str(row['Remarks']) if pd.notna(row['Remarks']) else ''
-            })
-            try:
-                sl_val = row['SL%']
-                if pd.notna(sl_val):
-                    sl_str = str(sl_val)
-                    if '_' in sl_str:
-                        strategies[-1]['SL%'] = sl_str
-                    else:
-                        sl_num = float(sl_val)
-                        strategies[-1]['SL%'] = str(int(round(sl_num * 100)))
-            except:
-                strategies[-1]['SL%'] = '0'
+            filtered_strategies.append(strat)
         
-        return jsonify({'status': 'success', 'strategies': strategies})
+        return jsonify({'status': 'success', 'strategies': filtered_strategies})
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})
 
@@ -627,19 +608,8 @@ def save_strategy_details():
     strategies = data.get('strategies', [])
     
     strategy_file = get_strategy_file_path()
-    if not strategy_file:
-        return jsonify({'status': 'error', 'message': 'No strategy file found'})
     
     try:
-        df_strategy = pd.read_excel(strategy_file, skiprows=1)
-        df_strategy = df_strategy.iloc[:, 2:].dropna(how='all')
-        df_strategy.columns = ['Main Strategy', 'DTE/WTE', 'Segment', 'Strategy', 'Exchange', 'Symbol', 
-                          'Entry Time', 'Exit Time', 'Strike', 'Option Type', 'Side', 'SL%', 'Remarks']
-        df_strategy = df_strategy[df_strategy['Strategy'].notna()]
-        
-        if 'Strike ' in df_strategy.columns and 'Strike' not in df_strategy.columns:
-            df_strategy = df_strategy.rename(columns={'Strike ': 'Strike'})
-        
         df_nf = pd.read_csv('NF_ExpiryDate.csv')
         row_nf = df_nf[df_nf['Date'] == date]
         nf_dte = int(row_nf.iloc[0]['DTE']) if not row_nf.empty else 0
@@ -652,7 +622,17 @@ def save_strategy_details():
         row_snx = df_snx[df_snx['Date'] == date]
         snx_dte = int(row_snx.iloc[0]['DTE']) if not row_snx.empty else 0
         
-        df_strategy_filtered = df_strategy.copy()
+        if strategy_file:
+            df_strategy = pd.read_excel(strategy_file, skiprows=1)
+            df_strategy = df_strategy.iloc[:, 2:].dropna(how='all')
+            df_strategy.columns = ['Main Strategy', 'DTE/WTE', 'Segment', 'Strategy', 'Exchange', 'Symbol', 
+                              'Entry Time', 'Exit Time', 'Strike', 'Option Type', 'Side', 'SL%', 'Remarks']
+            df_strategy = df_strategy[df_strategy['Strategy'].notna()]
+            
+            if 'Strike ' in df_strategy.columns and 'Strike' not in df_strategy.columns:
+                df_strategy = df_strategy.rename(columns={'Strike ': 'Strike'})
+        else:
+            df_strategy = pd.DataFrame()
         
         rows_to_remove = []
         for idx, row in df_strategy.iterrows():
@@ -674,12 +654,48 @@ def save_strategy_details():
                 rows_to_remove.append(idx)
         
         df_strategy_filtered = df_strategy.drop(rows_to_remove)
-        
         new_rows = pd.DataFrame(strategies)
-        
         df_final = pd.concat([df_strategy_filtered, new_rows], ignore_index=True)
         
-        df_final.to_excel(strategy_file, index=False, startrow=1)
+        if strategy_file:
+            df_final.to_excel(strategy_file, index=False, startrow=1)
+        
+        # Also save new strategies to TiDB
+        conn = get_tidb_connection()
+        cursor = conn.cursor()
+        for strat in strategies:
+            sl_val = strat.get('SL%', '0')
+            sl_str = str(sl_val).strip().replace('%', '')
+            if '_' in sl_str:
+                sl_final = sl_str
+            else:
+                try:
+                    sl_final = str(int(float(sl_str)))
+                except:
+                    sl_final = '0'
+            
+            cursor.execute('''
+                INSERT INTO strategies (main_strategy, dte_wte, segment, strategy, exchange, symbol, 
+                entry_time, exit_time, strike, option_type, side, sl_percent, remarks)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ''', (
+                strat.get('Main Strategy', ''),
+                strat.get('DTE/WTE', 0),
+                strat.get('Segment', ''),
+                strat.get('Strategy', ''),
+                strat.get('Exchange', ''),
+                strat.get('Symbol', ''),
+                strat.get('Entry Time', ''),
+                strat.get('Exit Time', ''),
+                strat.get('Strike', 'ATM'),
+                strat.get('Option Type', 'CE& PE Both'),
+                strat.get('Side', 'Sell'),
+                sl_final,
+                strat.get('Remarks', '')
+            ))
+        conn.commit()
+        cursor.close()
+        conn.close()
         
         return jsonify({'status': 'success', 'message': 'Strategy details saved successfully'})
     except Exception as e:
@@ -889,6 +905,57 @@ def get_strategy_file_path():
         return 'AllStrategyDetails.xlsx'
     return None
 
+def get_strategies_from_tidb(dte_wte=None, symbol=None):
+    strategies = []
+    try:
+        conn = get_tidb_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        query = "SELECT * FROM strategies WHERE 1=1"
+        params = []
+        
+        if dte_wte is not None:
+            query += " AND dte_wte = %s"
+            params.append(dte_wte)
+        
+        if symbol:
+            symbol_upper = symbol.upper()
+            if 'BANKNIFTY' in symbol_upper or 'BANK' in symbol_upper:
+                query += " AND symbol LIKE %s"
+                params.append('%BANKNIFTY%')
+            elif 'NIFTY' in symbol_upper:
+                query += " AND symbol LIKE %s"
+                params.append('%NIFTY%')
+            elif 'SENSEX' in symbol_upper:
+                query += " AND symbol LIKE %s"
+                params.append('%SENSEX%')
+        
+        cursor.execute(query, params)
+        rows = cursor.fetchall()
+        
+        for row in rows:
+            strategies.append({
+                'Main Strategy': row['main_strategy'],
+                'DTE/WTE': row['dte_wte'],
+                'Segment': row['segment'],
+                'Strategy': row['strategy'],
+                'Exchange': row['exchange'],
+                'Symbol': row['symbol'],
+                'Entry Time': row['entry_time'],
+                'Exit Time': row['exit_time'],
+                'Strike': row['strike'],
+                'Option Type': row['option_type'],
+                'Side': row['side'],
+                'SL%': row['sl_percent'],
+                'Remarks': row['remarks']
+            })
+        
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print(f"Error loading strategies from TiDB: {e}")
+    return strategies
+
 @app.route('/generate_csv', methods=['POST'])
 def generate_csv():
     data = request.json
@@ -903,22 +970,6 @@ def generate_csv():
             return jsonify({'status': 'error', 'message': 'No date selected'})
         
         strategy_file = get_strategy_file_path()
-        if not strategy_file:
-            return jsonify({'status': 'error', 'message': 'No strategy file found. Please upload AllStrategyDetails.xlsx'})
-        
-        df_strategy = pd.read_excel(strategy_file, skiprows=1)
-        df_strategy = df_strategy.iloc[:, 2:].dropna(how='all')
-        df_strategy.columns = ['Main Strategy', 'DTE/WTE', 'Segment', 'Strategy', 'Exchange', 'Symbol', 
-                          'Entry Time', 'Exit Time', 'Strike', 'Option Type', 'Side', 'SL%', 'Remarks']
-        df_strategy = df_strategy[df_strategy['Strategy'].notna()]
-        
-        if 'Strike ' in df_strategy.columns and 'Strike' not in df_strategy.columns:
-            df_strategy = df_strategy.rename(columns={'Strike ': 'Strike'})
-        
-        # If temporary strategy details provided, use them instead of reading from file
-        if strategy_details and len(strategy_details) > 0:
-            print(f"DEBUG: Using strategy_details, count={len(strategy_details)}, first item SL%={strategy_details[0].get('SL%')}")
-            df_strategy = pd.DataFrame(strategy_details)
         
         df_nf = pd.read_csv('NF_ExpiryDate.csv')
         row_nf = df_nf[df_nf['Date'] == date]
@@ -940,6 +991,24 @@ def generate_csv():
             'BANKNIFTY': {'expiry': bnf_expiry, 'dte': bnf_wte, 'wte': bnf_wte},
             'SENSEX': {'expiry': snx_expiry, 'dte': snx_dte, 'wte': snx_dte}
         }
+        
+        # If temporary strategy details provided, use them
+        if strategy_details and len(strategy_details) > 0:
+            print(f"DEBUG: Using strategy_details, count={len(strategy_details)}, first item SL%={strategy_details[0].get('SL%')}")
+            df_strategy = pd.DataFrame(strategy_details)
+        elif strategy_file:
+            df_strategy = pd.read_excel(strategy_file, skiprows=1)
+            df_strategy = df_strategy.iloc[:, 2:].dropna(how='all')
+            df_strategy.columns = ['Main Strategy', 'DTE/WTE', 'Segment', 'Strategy', 'Exchange', 'Symbol', 
+                              'Entry Time', 'Exit Time', 'Strike', 'Option Type', 'Side', 'SL%', 'Remarks']
+            df_strategy = df_strategy[df_strategy['Strategy'].notna()]
+            
+            if 'Strike ' in df_strategy.columns and 'Strike' not in df_strategy.columns:
+                df_strategy = df_strategy.rename(columns={'Strike ': 'Strike'})
+        else:
+            # Use strategies from TiDB
+            tidb_strategies = get_strategies_from_tidb()
+            df_strategy = pd.DataFrame(tidb_strategies)
         
         client_lot_map = {}
         valid_strategies = set()
