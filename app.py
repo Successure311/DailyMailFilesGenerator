@@ -382,7 +382,7 @@ def get_manual_lots_by_date(date):
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})
 
-@app.route('/api/Strategies')
+@app.route('/api/strategies')
 def get_Strategies():
     try:
         conn = get_tidb_connection()
@@ -395,7 +395,7 @@ def get_Strategies():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})
 
-@app.route('/api/Strategies/<int:dte_wte>/<symbol>')
+@app.route('/api/strategies/<int:dte_wte>/<symbol>')
 def get_Strategies_by_filter(dte_wte, symbol):
     try:
         conn = get_tidb_connection()
@@ -463,8 +463,8 @@ def load_manual_lots():
         pass
     return {}
 
-@app.route('/get_Strategies_for_date')
-def get_Strategies_for_date():
+@app.route('/get_strategies_for_date')
+def get_strategies_for_date():
     date = request.args.get('date', '')
     
     try:

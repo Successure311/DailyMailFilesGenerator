@@ -17,7 +17,7 @@ def get_tidb_connection():
     return mysql.connector.connect(**TIDB_CONFIG)
 
 # API: Get all Strategies
-@app.route('/api/Strategies')
+@app.route('/api/strategies')
 def get_Strategies():
     try:
         conn = get_tidb_connection()
@@ -31,7 +31,7 @@ def get_Strategies():
         return jsonify({'status': 'error', 'message': str(e)})
 
 # API: Get Strategies by DTE/WTE and Symbol
-@app.route('/api/Strategies/<int:dte_wte>/<symbol>')
+@app.route('/api/strategies/<int:dte_wte>/<symbol>')
 def get_Strategies_by_filter(dte_wte, symbol):
     try:
         conn = get_tidb_connection()
