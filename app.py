@@ -18,7 +18,11 @@ TIDB_CONFIG = {
 }
 
 def get_tidb_connection():
-    return mysql.connector.connect(**TIDB_CONFIG)
+    config = TIDB_CONFIG.copy()
+    # For Render deployment, enable SSL
+    if os.environ.get('RENDER') or os.environ.get('PORT'):
+        config['ssl_ca'] = '/etc/ssl/certs/ca-certificates.crt'
+    return mysql.connector.connect(**config)
 
 def init_tidb_tables():
     conn = get_tidb_connection()
@@ -236,8 +240,8 @@ def save_strategy_to_tidb(strategy_data):
 
 try:
     load_margin_data_from_tidb()
-except:
-    pass
+except Exception as e:
+    print(f"TiDB load error (using local fallback): {e}")
 
 ALL_DATES = get_all_dates()
 
