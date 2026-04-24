@@ -8,6 +8,10 @@ import mysql.connector
 
 app = Flask(__name__)
 
+# Static files configuration
+app.static_folder = 'static'
+app.static_url_path = '/static'
+
 TIDB_CONFIG = {
     'host': os.environ.get('TIDB_HOST', 'gateway01.ap-southeast-1.prod.aws.tidbcloud.com'),
     'user': os.environ.get('TIDB_USER', '2hqkC7CYCyd33Y1.root'),
