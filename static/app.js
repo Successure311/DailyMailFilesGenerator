@@ -34,7 +34,7 @@ async function loadData() {
     
     renderMarginTable();
     renderTradeCountTable();
-    renderExpectancyTable();
+    calculateExpectancy();
     renderClientMarginTable();
     renderDateDropdown();
 }
