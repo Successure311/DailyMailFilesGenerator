@@ -183,7 +183,8 @@ async function calculateExpectancy() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             margin_data: convertMarginDataForSave(),
-            trade_count: convertTradeCountDataForSave()
+            trade_count: convertTradeCountDataForSave(),
+            saved_expectancy: strategyExpectancy
         })
     });
     

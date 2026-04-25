@@ -736,6 +736,7 @@ def calculate_expectancy():
     data = request.json
     MarginData = data.get('margin_data', {})
     trade_count = data.get('trade_count', {})
+    saved_expectancy = data.get('saved_expectancy', {})
     
     print(f"MarginData: {MarginData}")
     print(f"trade_count: {trade_count}")
@@ -764,6 +765,13 @@ def calculate_expectancy():
                 'Expiry_WOH': expiry_m.get('Without_Hedge', 0) * count,
                 'Expiry_WH': expiry_m.get('With_Hedge', 0) * count
             }
+    
+    for index, Strategies in saved_expectancy.items():
+        if index not in expectancy:
+            expectancy[index] = {}
+        for strategy, values in Strategies.items():
+            if strategy not in expectancy[index]:
+                expectancy[index][strategy] = values
     
     return jsonify(expectancy)
 
