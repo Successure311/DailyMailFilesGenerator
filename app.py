@@ -734,8 +734,11 @@ def save_data():
 @app.route('/calculate_expectancy', methods=['POST'])
 def calculate_expectancy():
     data = request.json
-    MarginData = data.get('MarginData', {})
+    MarginData = data.get('margin_data', {})
     trade_count = data.get('trade_count', {})
+    
+    print(f"MarginData: {MarginData}")
+    print(f"trade_count: {trade_count}")
     
     expectancy = {}
     
