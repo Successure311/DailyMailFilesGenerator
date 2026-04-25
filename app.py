@@ -743,11 +743,9 @@ def calculate_expectancy():
         expectancy[index] = {}
         for strategy, count in Strategies.items():
             if count == '' or count is None or count == '-':
-                continue
+                count = 0
             
             count = int(count) if count else 0
-            if count == 0:
-                continue
             
             margin = MarginData.get(index, {})
             expiry_m = margin.get('Expiry', {})
