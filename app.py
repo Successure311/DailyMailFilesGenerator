@@ -750,6 +750,9 @@ def calculate_expectancy():
             
             count = int(count) if count else 0
             
+            if count == 0:
+                continue
+            
             margin = MarginData.get(index, {})
             expiry_m = margin.get('Expiry', {})
             nonexpiry_m = margin.get('Non_Expiry', {})

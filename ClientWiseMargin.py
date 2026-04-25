@@ -47,6 +47,7 @@ STRATEGY_TRADE_COUNT = {
     "NIFTY": {
         "2T3 TO": "-",
         "DYNAMIC SL": 10,
+        "INDEXMOVE": 2,
         "ITM SH": 11,
         "TO": 4
     }
@@ -137,7 +138,7 @@ STRATEGY_EXPECTANCY = {
             "Expiry_WH": 2400000
         },
         "INDEXMOVE": {
-            "Non_Expiry_WOH": 520000,
+            "Non_Expiry_WOH": 522000,
             "Non_Expiry_WH": 320000,
             "Expiry_WOH": 680000,
             "Expiry_WH": 480000
