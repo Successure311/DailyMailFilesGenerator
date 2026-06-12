@@ -1,0 +1,339 @@
+[
+    {
+        "label": "Flask",
+        "importPath": "flask",
+        "description": "flask",
+        "isExtraImport": true,
+        "detail": "flask",
+        "documentation": {}
+    },
+    {
+        "label": "render_template",
+        "importPath": "flask",
+        "description": "flask",
+        "isExtraImport": true,
+        "detail": "flask",
+        "documentation": {}
+    },
+    {
+        "label": "jsonify",
+        "importPath": "flask",
+        "description": "flask",
+        "isExtraImport": true,
+        "detail": "flask",
+        "documentation": {}
+    },
+    {
+        "label": "request",
+        "importPath": "flask",
+        "description": "flask",
+        "isExtraImport": true,
+        "detail": "flask",
+        "documentation": {}
+    },
+    {
+        "label": "send_file",
+        "importPath": "flask",
+        "description": "flask",
+        "isExtraImport": true,
+        "detail": "flask",
+        "documentation": {}
+    },
+    {
+        "label": "zipfile",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "zipfile",
+        "description": "zipfile",
+        "detail": "zipfile",
+        "documentation": {}
+    },
+    {
+        "label": "io",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "io",
+        "description": "io",
+        "detail": "io",
+        "documentation": {}
+    },
+    {
+        "label": "json",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "json",
+        "description": "json",
+        "detail": "json",
+        "documentation": {}
+    },
+    {
+        "label": "os",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "os",
+        "description": "os",
+        "detail": "os",
+        "documentation": {}
+    },
+    {
+        "label": "pandas",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "pandas",
+        "description": "pandas",
+        "detail": "pandas",
+        "documentation": {}
+    },
+    {
+        "label": "datetime",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "datetime",
+        "description": "datetime",
+        "detail": "datetime",
+        "documentation": {}
+    },
+    {
+        "label": "get_all_dates",
+        "kind": 2,
+        "importPath": "app",
+        "description": "app",
+        "peekOfCode": "def get_all_dates():\n    dates = set()\n    for file in ['NF_ExpiryDate.csv', 'BNF_ExpiryDate.csv', 'SNX_ExpiryDate.csv']:\n        try:\n            df = pd.read_csv(file)\n            dates.update(df['Date'].dropna().unique())\n        except:\n            pass\n    sorted_dates = sorted(list(dates), key=lambda x: pd.to_datetime(x, format='%d-%m-%Y'))\n    return sorted_dates",
+        "detail": "app",
+        "documentation": {}
+    },
+    {
+        "label": "index",
+        "kind": 2,
+        "importPath": "app",
+        "description": "app",
+        "peekOfCode": "def index():\n    return render_template('index.html')\n@app.route('/get_data')\ndef get_data():\n    return jsonify({\n        'INDEX_MARGIN_DATA': INDEX_MARGIN_DATA,\n        'STRATEGY_TRADE_COUNT': STRATEGY_TRADE_COUNT,\n        'STRATEGY_EXPECTANCY': STRATEGY_EXPECTANCY,\n        'CLIENT_MARGIN_DATA': CLIENT_MARGIN_DATA,\n        'ALL_DATES': ALL_DATES",
+        "detail": "app",
+        "documentation": {}
+    },
+    {
+        "label": "get_data",
+        "kind": 2,
+        "importPath": "app",
+        "description": "app",
+        "peekOfCode": "def get_data():\n    return jsonify({\n        'INDEX_MARGIN_DATA': INDEX_MARGIN_DATA,\n        'STRATEGY_TRADE_COUNT': STRATEGY_TRADE_COUNT,\n        'STRATEGY_EXPECTANCY': STRATEGY_EXPECTANCY,\n        'CLIENT_MARGIN_DATA': CLIENT_MARGIN_DATA,\n        'ALL_DATES': ALL_DATES\n    })\n@app.route('/get_lot_data')\ndef get_lot_data():",
+        "detail": "app",
+        "documentation": {}
+    },
+    {
+        "label": "get_lot_data",
+        "kind": 2,
+        "importPath": "app",
+        "description": "app",
+        "peekOfCode": "def get_lot_data():\n    date = request.args.get('date', '')\n    result = {}\n    for name, file in [('NF', 'NF_ExpiryDate.csv'), ('BNF', 'BNF_ExpiryDate.csv'), ('SNX', 'SNX_ExpiryDate.csv')]:\n        try:\n            df = pd.read_csv(file)\n            row = df[df['Date'] == date]\n            if not row.empty:\n                result[name] = row.to_dict('records')[0]\n            else:",
+        "detail": "app",
+        "documentation": {}
+    },
+    {
+        "label": "load_manual_lots",
+        "kind": 2,
+        "importPath": "app",
+        "description": "app",
+        "peekOfCode": "def load_manual_lots():\n    try:\n        if os.path.exists(MANUAL_LOTS_FILE):\n            with open(MANUAL_LOTS_FILE, 'r') as f:\n                return json.load(f)\n    except:\n        pass\n    return {}\n@app.route('/get_strategies_for_date')\ndef get_strategies_for_date():",
+        "detail": "app",
+        "documentation": {}
+    },
+    {
+        "label": "get_strategies_for_date",
+        "kind": 2,
+        "importPath": "app",
+        "description": "app",
+        "peekOfCode": "def get_strategies_for_date():\n    date = request.args.get('date', '')\n    strategy_file = get_strategy_file_path()\n    if not strategy_file:\n        return jsonify({'strategies': []})\n    try:\n        df_strategy = pd.read_excel(strategy_file, skiprows=1)\n        df_strategy = df_strategy.iloc[:, 2:].dropna(how='all')\n        df_strategy.columns = ['Main Strategy', 'DTE/WTE', 'Segment', 'Strategy', 'Exchange', 'Symbol', \n                          'Entry Time', 'Exit Time', 'Strike', 'Option Type', 'Side', 'SL%', 'Remarks']",
+        "detail": "app",
+        "documentation": {}
+    },
+    {
+        "label": "get_strategy_details",
+        "kind": 2,
+        "importPath": "app",
+        "description": "app",
+        "peekOfCode": "def get_strategy_details():\n    date = request.args.get('date', '')\n    strategy_file = get_strategy_file_path()\n    if not strategy_file:\n        return jsonify({'status': 'error', 'message': 'No strategy file found'})\n    try:\n        df_strategy = pd.read_excel(strategy_file, skiprows=1)\n        df_strategy = df_strategy.iloc[:, 2:].dropna(how='all')\n        df_strategy.columns = ['Main Strategy', 'DTE/WTE', 'Segment', 'Strategy', 'Exchange', 'Symbol', \n                          'Entry Time', 'Exit Time', 'Strike', 'Option Type', 'Side', 'SL%', 'Remarks']",
+        "detail": "app",
+        "documentation": {}
+    },
+    {
+        "label": "save_strategy_details",
+        "kind": 2,
+        "importPath": "app",
+        "description": "app",
+        "peekOfCode": "def save_strategy_details():\n    data = request.json\n    date = data.get('date', '')\n    strategies = data.get('strategies', [])\n    strategy_file = get_strategy_file_path()\n    if not strategy_file:\n        return jsonify({'status': 'error', 'message': 'No strategy file found'})\n    try:\n        df_strategy = pd.read_excel(strategy_file, skiprows=1)\n        df_strategy = df_strategy.iloc[:, 2:].dropna(how='all')",
+        "detail": "app",
+        "documentation": {}
+    },
+    {
+        "label": "get_allocation_data",
+        "kind": 2,
+        "importPath": "app",
+        "description": "app",
+        "peekOfCode": "def get_allocation_data():\n    date = request.args.get('date', '')\n    try:\n        df_nf = pd.read_csv('NF_ExpiryDate.csv')\n        row = df_nf[df_nf['Date'] == date]\n        if not row.empty:\n            entry_day = row.iloc[0]['EntryDay']\n        else:\n            entry_day = ''\n    except:",
+        "detail": "app",
+        "documentation": {}
+    },
+    {
+        "label": "save_data",
+        "kind": 2,
+        "importPath": "app",
+        "description": "app",
+        "peekOfCode": "def save_data():\n    global INDEX_MARGIN_DATA, STRATEGY_TRADE_COUNT, STRATEGY_EXPECTANCY, CLIENT_MARGIN_DATA\n    data = request.json\n    INDEX_MARGIN_DATA = data.get('INDEX_MARGIN_DATA', INDEX_MARGIN_DATA)\n    STRATEGY_TRADE_COUNT = data.get('STRATEGY_TRADE_COUNT', STRATEGY_TRADE_COUNT)\n    STRATEGY_EXPECTANCY = data.get('STRATEGY_EXPECTANCY', STRATEGY_EXPECTANCY)\n    CLIENT_MARGIN_DATA = data.get('CLIENT_MARGIN_DATA', CLIENT_MARGIN_DATA)\n    with open('ClientWiseMargin.py', 'w') as f:\n        f.write('INDEX_MARGIN_DATA = ' + json.dumps(INDEX_MARGIN_DATA, indent=4) + '\\n\\n')\n        f.write('STRATEGY_TRADE_COUNT = ' + json.dumps(STRATEGY_TRADE_COUNT, indent=4) + '\\n\\n')",
+        "detail": "app",
+        "documentation": {}
+    },
+    {
+        "label": "calculate_expectancy",
+        "kind": 2,
+        "importPath": "app",
+        "description": "app",
+        "peekOfCode": "def calculate_expectancy():\n    data = request.json\n    margin_data = data.get('margin_data', {})\n    trade_count = data.get('trade_count', {})\n    expectancy = {}\n    for index, strategies in trade_count.items():\n        expectancy[index] = {}\n        for strategy, count in strategies.items():\n            if count == '' or count is None or count == '-':\n                continue",
+        "detail": "app",
+        "documentation": {}
+    },
+    {
+        "label": "save_manual_lots",
+        "kind": 2,
+        "importPath": "app",
+        "description": "app",
+        "peekOfCode": "def save_manual_lots():\n    data = request.json\n    lots_data = data.get('lotsData', {})\n    margin_multiplier = data.get('marginMultiplier', 15)\n    date = data.get('date', '')\n    try:\n        import os\n        manual_lots_file = 'manual_lots.json'\n        manual_data = {}\n        if os.path.exists(manual_lots_file):",
+        "detail": "app",
+        "documentation": {}
+    },
+    {
+        "label": "upload_strategy_file",
+        "kind": 2,
+        "importPath": "app",
+        "description": "app",
+        "peekOfCode": "def upload_strategy_file():\n    try:\n        if 'file' not in request.files:\n            return jsonify({'status': 'error', 'message': 'No file uploaded'})\n        file = request.files['file']\n        if file.filename == '':\n            return jsonify({'status': 'error', 'message': 'No file selected'})\n        if file and (file.filename.endswith('.xlsx') or file.filename.endswith('.xls')):\n            file.save('AllStrategyDetails.xlsx')\n            return jsonify({'status': 'success', 'message': 'File uploaded successfully'})",
+        "detail": "app",
+        "documentation": {}
+    },
+    {
+        "label": "get_strategy_file_path",
+        "kind": 2,
+        "importPath": "app",
+        "description": "app",
+        "peekOfCode": "def get_strategy_file_path():\n    if os.path.exists('AllStrategyDetails.xlsx'):\n        return 'AllStrategyDetails.xlsx'\n    return None\n@app.route('/generate_csv', methods=['POST'])\ndef generate_csv():\n    data = request.json\n    lots_data = data.get('lotsData', {})\n    date = data.get('date', '')\n    client_margin_data = data.get('clientMarginData', [])",
+        "detail": "app",
+        "documentation": {}
+    },
+    {
+        "label": "generate_csv",
+        "kind": 2,
+        "importPath": "app",
+        "description": "app",
+        "peekOfCode": "def generate_csv():\n    data = request.json\n    lots_data = data.get('lotsData', {})\n    date = data.get('date', '')\n    client_margin_data = data.get('clientMarginData', [])\n    client_strategy_lots = data.get('clientStrategyLots', [])\n    strategy_details = data.get('strategyDetails', None)\n    try:\n        if not date:\n            return jsonify({'status': 'error', 'message': 'No date selected'})",
+        "detail": "app",
+        "documentation": {}
+    },
+    {
+        "label": "save_lots_excel",
+        "kind": 2,
+        "importPath": "app",
+        "description": "app",
+        "peekOfCode": "def save_lots_excel():\n    data = request.json\n    date = data.get('date', '')\n    client_data = data.get('clientData', [])\n    sl_percent = data.get('slPercent', '')\n    margin_multiplier = data.get('marginMultiplier', None)\n    try:\n        if not date:\n            return jsonify({'status': 'error', 'message': 'No date selected'})\n        flattened_data = []",
+        "detail": "app",
+        "documentation": {}
+    },
+    {
+        "label": "app",
+        "kind": 5,
+        "importPath": "app",
+        "description": "app",
+        "peekOfCode": "app = Flask(__name__)\n# Initialize variables to satisfy linter\nINDEX_MARGIN_DATA = {}\nSTRATEGY_TRADE_COUNT = {}\nSTRATEGY_EXPECTANCY = {}\nCLIENT_MARGIN_DATA = []\nwith open('ClientWiseMargin.py', 'r') as f:\n    content = f.read()\n    exec(content, globals())\ndef get_all_dates():",
+        "detail": "app",
+        "documentation": {}
+    },
+    {
+        "label": "INDEX_MARGIN_DATA",
+        "kind": 5,
+        "importPath": "app",
+        "description": "app",
+        "peekOfCode": "INDEX_MARGIN_DATA = {}\nSTRATEGY_TRADE_COUNT = {}\nSTRATEGY_EXPECTANCY = {}\nCLIENT_MARGIN_DATA = []\nwith open('ClientWiseMargin.py', 'r') as f:\n    content = f.read()\n    exec(content, globals())\ndef get_all_dates():\n    dates = set()\n    for file in ['NF_ExpiryDate.csv', 'BNF_ExpiryDate.csv', 'SNX_ExpiryDate.csv']:",
+        "detail": "app",
+        "documentation": {}
+    },
+    {
+        "label": "STRATEGY_TRADE_COUNT",
+        "kind": 5,
+        "importPath": "app",
+        "description": "app",
+        "peekOfCode": "STRATEGY_TRADE_COUNT = {}\nSTRATEGY_EXPECTANCY = {}\nCLIENT_MARGIN_DATA = []\nwith open('ClientWiseMargin.py', 'r') as f:\n    content = f.read()\n    exec(content, globals())\ndef get_all_dates():\n    dates = set()\n    for file in ['NF_ExpiryDate.csv', 'BNF_ExpiryDate.csv', 'SNX_ExpiryDate.csv']:\n        try:",
+        "detail": "app",
+        "documentation": {}
+    },
+    {
+        "label": "STRATEGY_EXPECTANCY",
+        "kind": 5,
+        "importPath": "app",
+        "description": "app",
+        "peekOfCode": "STRATEGY_EXPECTANCY = {}\nCLIENT_MARGIN_DATA = []\nwith open('ClientWiseMargin.py', 'r') as f:\n    content = f.read()\n    exec(content, globals())\ndef get_all_dates():\n    dates = set()\n    for file in ['NF_ExpiryDate.csv', 'BNF_ExpiryDate.csv', 'SNX_ExpiryDate.csv']:\n        try:\n            df = pd.read_csv(file)",
+        "detail": "app",
+        "documentation": {}
+    },
+    {
+        "label": "CLIENT_MARGIN_DATA",
+        "kind": 5,
+        "importPath": "app",
+        "description": "app",
+        "peekOfCode": "CLIENT_MARGIN_DATA = []\nwith open('ClientWiseMargin.py', 'r') as f:\n    content = f.read()\n    exec(content, globals())\ndef get_all_dates():\n    dates = set()\n    for file in ['NF_ExpiryDate.csv', 'BNF_ExpiryDate.csv', 'SNX_ExpiryDate.csv']:\n        try:\n            df = pd.read_csv(file)\n            dates.update(df['Date'].dropna().unique())",
+        "detail": "app",
+        "documentation": {}
+    },
+    {
+        "label": "ALL_DATES",
+        "kind": 5,
+        "importPath": "app",
+        "description": "app",
+        "peekOfCode": "ALL_DATES = get_all_dates()\n@app.route('/')\ndef index():\n    return render_template('index.html')\n@app.route('/get_data')\ndef get_data():\n    return jsonify({\n        'INDEX_MARGIN_DATA': INDEX_MARGIN_DATA,\n        'STRATEGY_TRADE_COUNT': STRATEGY_TRADE_COUNT,\n        'STRATEGY_EXPECTANCY': STRATEGY_EXPECTANCY,",
+        "detail": "app",
+        "documentation": {}
+    },
+    {
+        "label": "MANUAL_LOTS_FILE",
+        "kind": 5,
+        "importPath": "app",
+        "description": "app",
+        "peekOfCode": "MANUAL_LOTS_FILE = 'manual_lots.json'\ndef load_manual_lots():\n    try:\n        if os.path.exists(MANUAL_LOTS_FILE):\n            with open(MANUAL_LOTS_FILE, 'r') as f:\n                return json.load(f)\n    except:\n        pass\n    return {}\n@app.route('/get_strategies_for_date')",
+        "detail": "app",
+        "documentation": {}
+    },
+    {
+        "label": "INDEX_MARGIN_DATA",
+        "kind": 5,
+        "importPath": "ClientWiseMargin",
+        "description": "ClientWiseMargin",
+        "peekOfCode": "INDEX_MARGIN_DATA = {\n    \"BANKNIFTY\": {\n        \"Expiry\": {\n            \"With_Hedge\": 250000,\n            \"Without_Hedge\": 400000\n        },\n        \"Non_Expiry\": {\n            \"With_Hedge\": 176000,\n            \"Without_Hedge\": 312000\n        }",
+        "detail": "ClientWiseMargin",
+        "documentation": {}
+    },
+    {
+        "label": "STRATEGY_TRADE_COUNT",
+        "kind": 5,
+        "importPath": "ClientWiseMargin",
+        "description": "ClientWiseMargin",
+        "peekOfCode": "STRATEGY_TRADE_COUNT = {\n    \"SENSEX\": {\n        \"2T3 TO\": 3,\n        \"DYNAMIC SL\": 3,\n        \"ITM SH\": \"-\",\n        \"TO\": 3\n    },\n    \"BANKNIFTY\": {\n        \"2T3 TO\": \"-\",\n        \"DYNAMIC SL\": 3,",
+        "detail": "ClientWiseMargin",
+        "documentation": {}
+    },
+    {
+        "label": "CLIENT_MARGIN_DATA",
+        "kind": 5,
+        "importPath": "ClientWiseMargin",
+        "description": "ClientWiseMargin",
+        "peekOfCode": "CLIENT_MARGIN_DATA = [\n    {\n        \"ClientID\": \"OWN\",\n        \"Code\": \"H\",\n        \"TotalMargin\": 75000000\n    },\n    {\n        \"ClientID\": \"MOSTI23482\",\n        \"Code\": \"M\",\n        \"TotalMargin\": 60000000",
+        "detail": "ClientWiseMargin",
+        "documentation": {}
+    },
+    {
+        "label": "STRATEGY_EXPECTANCY",
+        "kind": 5,
+        "importPath": "ClientWiseMargin",
+        "description": "ClientWiseMargin",
+        "peekOfCode": "STRATEGY_EXPECTANCY = {\n    \"BANKNIFTY\": {\n        \"DYNAMIC SL\": {\n            \"Non_Expiry_WOH\": 936000,\n            \"Non_Expiry_WH\": 528000,\n            \"Expiry_WOH\": 1200000,\n            \"Expiry_WH\": 750000\n        }\n    },\n    \"NIFTY\": {",
+        "detail": "ClientWiseMargin",
+        "documentation": {}
+    }
+]
